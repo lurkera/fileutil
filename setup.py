@@ -8,8 +8,10 @@ platforms=["all"] 支持所有平台使用
 '''
 setup(
     name='fileutil',
-    version='1.0.3',
-    description=r'file union,file split by row/size/column,txt file transform to excel or excel file transform to txt and so on',
+    version='1.0.4',
+    description=r'''
+        file union,file split by row/size/column,txt file transform to excel or excel file transform to txt and so on
+    ''',
     long_description=open('README.rst', encoding='utf8').read(),
     platforms=["all"],
     author='Mr linle',

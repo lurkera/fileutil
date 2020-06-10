@@ -12,7 +12,7 @@ from .common import replace_invalid_char, read_excel, file_encoding, read_title
 
 
 def _make_union_function(name):
-    def parser_f(save_path, files, engine='normal', skip_row=0, need_title=1, all=False, keep_file=True, **kwargs):
+    def parser_f(save_path, files, engine='normal', skip_row=0, need_title=True, all=False, keep_file=True, **kwargs):
         kwargs.update(
             skip_row=skip_row,
             need_title=need_title,
@@ -55,10 +55,10 @@ def _normal_union_engine(save_path, files, **kwargs):
     need_title = kwargs.get('need_title', False)
     skip_row = kwargs.get('skip_row', 0)
     print('{:-^70}'.format(f'正在合并文件，共需合并{len(files)}个文件'))
-    with open(save_path, 'a', encoding='gbk') as fobj:
+    with open(save_path, 'wb') as fobj:
         if len(files) > 1:
             for index, file in enumerate(files):
-                with open(file, 'r') as subobj:
+                with open(file, 'rb') as subobj:
                     for i in range(skip_row):
                         subobj.readline()
                     if need_title:
@@ -91,7 +91,7 @@ def _pandas_union_engine(save_path, files, **kwargs):
         for tb in tbs:
             _tb = pd.concat([base, tb])
             _tb.to_csv(save_path, index=False, encoding='gbk', header=not save_path.exists(), mode='a')
-        print(f'>>>已合并第{index + 1}/{len(files)}个文件"...')
+        print(f'>>>已合并第{index + 1}/{len(files)}个文件:{file}...')
     return save_path
 
 
@@ -211,13 +211,13 @@ def _split_by_size_engine(save_path, file, split_size, **kwargs):
 
 def _split_by_column_engine(save_path, file, split_column, **kwargs):
     stem, suffix = file.stem, file.suffix
-    skip_row = kwargs.get('skip_row',0)
+    skip_row = kwargs.get('skip_row', 0)
     if isinstance(skip_row, list) and isinstance(skip_row, str):
         raise ValueError('需分割的列的参数格式不正确')
     encode = file_encoding(file)
     tbs = pd.read_csv(file, encoding=encode, skiprows=skip_row, header=0, chunksize=100000,
                       keep_default_na=False, low_memory=False, error_bad_lines=False)
-    print('{:-^70}'.format(f'文件转换:将{file}转换为csv格式'))
+    print('{:-^70}'.format(f'文件分割:将{file}按照{",".join(split_column)}'))
     new_file_list = []
     for tb in tbs:
         group = tb.groupby(split_column)
@@ -226,8 +226,9 @@ def _split_by_column_engine(save_path, file, split_column, **kwargs):
                 [str(x) for x in index])
             savename_tail = replace_invalid_char(savename_tail)
             _save_path = save_path / f'{stem}_{savename_tail}{suffix}'
-            print(f'>>>生成文件：{_save_path}')
+
             header = not _save_path.exists()
+            if header: print(f'>>>生成文件：{_save_path}')
             value.to_csv(_save_path, index=False, encoding='gbk', mode='a', header=header)
             new_file_list.append(_save_path)
     return list(set(new_file_list))
@@ -273,7 +274,7 @@ def _csv_trans_engine(save_path, csv_path, **kwargs):
 
 
 def _make_trans_function(name):
-    def parser_f(save_path, file_path, engine='excel', keep_file=True,**kwargs):
+    def parser_f(save_path, file_path, engine='excel', keep_file=True, **kwargs):
         kwargs.update(
             keep_file=keep_file
         )
